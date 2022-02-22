@@ -1,6 +1,6 @@
 # level1-image-classification-level1-cv-03
 
-저희팀 레포지토리 누가 만들었나요?
+프라이빗한 공간이라 관련 자료를 올려도 되겠네요~
 
 
 
