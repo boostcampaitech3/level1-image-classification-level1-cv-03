@@ -1,0 +1,23 @@
+from torchvision import transforms
+a = transforms.PILToTensor()
+t = a(image)
+t
+>>> tensor로 변경. 정규환 안시키고 그대로 나옴
+
+b = transforms.ToPILImage()
+b(t)
+>>> 다시 이미지로 변경
+
+--------------------------
+
+transforms.PILToTensor()
+이거 사용해도 torch.Tensor가 아니라 torch.Size로 numpy.array형식이 그대로 유지되는 것 같음..
+
+그냥 transforms.ToTensor()를 사용해서 torch.tensor로 변경하고 각 원소에 255를 곱해주는 방식으로 해결
+
+PTLToTensor()는 왜 있는지 궁금하다. 일단 패스
+
+--------------------------
+out_features는 또 그냥 torch.Tensor면 안됨
+torch.LongTensor가 들어가야 정상 작동함. 일단 클래스 데이터에 한해서는 이런데 다른 모양은 데이터는 아직 모르겠다...
+
