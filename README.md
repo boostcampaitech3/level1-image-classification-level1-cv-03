@@ -17,6 +17,9 @@ aistages 서버에 git 연동하기
   2. 코드 수정 및 대회 페이지에 제출을 한 경우에는 ```commit message```에 수정 내용과 ```YYYY-MM-DD_Submission_7``` 과 같이 제출 기록도 함께 표시해주시면 좋을 것 같습니다.
   
 
+
+
+
   
 
 
