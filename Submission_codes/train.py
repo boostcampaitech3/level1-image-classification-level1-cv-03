@@ -18,6 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 from dataset import MaskBaseDataset
 from loss import create_criterion
 
+import wandb
 
 def seed_everything(seed):
     torch.manual_seed(seed)
@@ -184,7 +185,10 @@ def train(data_dir, model_dir, args):
                 )
                 logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
                 logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
-
+                wandb.log({
+                    "Train Accuracy": train_acc,
+                    "Train Loss": train_loss
+                })
                 loss_value = 0
                 matches = 0
 
@@ -232,6 +236,10 @@ def train(data_dir, model_dir, args):
             logger.add_scalar("Val/loss", val_loss, epoch)
             logger.add_scalar("Val/accuracy", val_acc, epoch)
             logger.add_figure("results", figure, epoch)
+            wandb.log({
+                    "Test Accuracy": val_acc,
+                    "Test Loss": val_loss
+            })
             print()
 
 
@@ -264,6 +272,10 @@ if __name__ == '__main__':
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
 
     args = parser.parse_args()
+    wandb.init(project="project-name", reinit=True)
+    wandb.run.name = args.name
+    wandb.run.save()
+    wandb.config.update(args) # adds all of the arguments as config variables
     print(args)
 
     data_dir = args.data_dir
