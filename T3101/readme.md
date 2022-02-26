@@ -12,3 +12,6 @@
     - Model_Selection : Resnet, EfficientNEt, ViT .. 등 Pretrained Model를 사용
     - Multi Label Classifier : Conv Layer 이후 task별(mask, gender, age) FC Layer 브랜치를 만들어서 따로 예측
 
+
+### 수정 사항
+- 2/27(일) : Model 관련 파일에 전부 cutmix 추가
