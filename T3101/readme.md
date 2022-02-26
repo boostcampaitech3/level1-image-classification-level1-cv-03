@@ -1,13 +1,14 @@
-### 모델 구조
+### 백경륜 T3101 코드 구현 폴더
 
-1. 하나의 모델에서 여러 브랜치를 만든다.
-    - conv layer에서 빠져나온 후, 마스크/성별/나이대 별로 새로운 브랜치로 학습을 한다.
-    - 레퍼런스
-        - https://discuss.pytorch.org/t/how-to-train-the-network-with-multiple-branches/2152 : forward에서 3개로 분리? -> return 에서 값 3개 나오고 각 값별로 loss과 optim 따로?
-        - https://discuss.pytorch.org/t/how-to-train-multi-branch-output-network/95199  
+1. Augmentation
+    - Albumentation : torchvision transform 라이브러리보다 빠르고 다양한 Augmentation이 가능
+    - Cutmix : 랜덤한 이미지들끼리 잘라서 붙이는 기법. 이미지 패치 사이즈를 랜덤한 값에서 절반(1/2)으로 변경
+ 
+2. Imbalanced Problem
+    - Focal Loss 
+    - WeightedRandomSampler, ImbalancedDatasetSampler
 
-  
-
-2. 아예 3가지 Conv 모델로 돌아가서 마지막에 3개의 flatten을 concat 한다.
-    - https://stackoverflow.com/questions/66786787/pytorch-multiple-branches-of-a-model
+3. Modeling
+    - Model_Selection : Resnet, EfficientNEt, ViT .. 등 Pretrained Model를 사용
+    - Multi Label Classifier : Conv Layer 이후 task별(mask, gender, age) FC Layer 브랜치를 만들어서 따로 예측
 
