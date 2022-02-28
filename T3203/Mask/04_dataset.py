@@ -3,7 +3,6 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 
 
-
 class MaskDataset(Dataset):
 
     def __init__(self, input_data, output_data, transform):
