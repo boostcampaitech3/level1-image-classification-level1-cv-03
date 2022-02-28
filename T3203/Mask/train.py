@@ -1,4 +1,4 @@
-from ready_to_data import RefineData
+from ready_to_data import Sampling, refine_data
 from transform import ImageTransform
 from dataset import MaskDataset
 from torchvision.models import alexnet
