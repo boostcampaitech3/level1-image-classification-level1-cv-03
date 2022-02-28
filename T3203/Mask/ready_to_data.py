@@ -1,10 +1,10 @@
 import os
 import random
 from PIL import Image
-import torch
+
 
 # directory by person
-images_path = '/opt/ml/input/data/train/images'
+images_path = '/opt/ml/BackUp/input/data/train/images'
 image_directory_names = [i for i in os.listdir(images_path) if '._' not in i]
 image_directory_names.sort()
 

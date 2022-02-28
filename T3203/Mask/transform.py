@@ -5,7 +5,7 @@ class ImageTransform():
     def __init__(self):
         self.data_transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Resize((128,96)),
+            # transforms.Grayscale(num_output_channels=1), 
         ])
     
     def __call__(self,img):

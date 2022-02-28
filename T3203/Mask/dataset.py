@@ -15,6 +15,6 @@ class MaskDataset(Dataset):
         return len(self.X)
         
     def __getitem__(self, index):
-        image = self.transform(self.X[index])*255
+        image = self.transform(self.X[index])
         label = self.Y[index]
         return image, label
