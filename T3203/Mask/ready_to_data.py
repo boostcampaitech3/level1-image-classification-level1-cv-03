@@ -50,7 +50,7 @@ def refine_data(images_path,image_directory_names:list):
 
         for _,i,_,j in splited_directory_name:
             gender.append(i)
-            age.append(int(j))
+            age.append(float(j))
 
         mask = []
 
@@ -81,7 +81,7 @@ def refine_data(images_path,image_directory_names:list):
 
         age_class = []
 
-        def change_int_to_class(x:int) -> int:
+        def change_age_to_class(x) -> int:
             answer = 0
             if x < 30:
                 answer = 0
@@ -92,9 +92,9 @@ def refine_data(images_path,image_directory_names:list):
             return answer
 
         for i in age:
-            age_class.append(change_int_to_class(i))
+            age_class.append(change_age_to_class(i))
 
-        return mask_class, gender_class, age_class
+        return mask_class, gender_class, age_class, age
 
     def create_mixed_class_list(mask:list,gender:list,age:list)->list:
 
@@ -126,9 +126,9 @@ def refine_data(images_path,image_directory_names:list):
         return mixed_class
 
     image_list,image_file_path = create_image_list(image_directory_names)    
-    mask_class,gender_class,age_class = create_individual_class_lists(image_file_path)
+    mask_class,gender_class,age_class, age = create_individual_class_lists(image_file_path)
     mixed_class = create_mixed_class_list(mask_class,gender_class,age_class)
-    return image_list,mask_class,gender_class,age_class,mixed_class
+    return image_list,mask_class,gender_class,age_class,age, mixed_class
 
 
 if __name__ == '__main__':

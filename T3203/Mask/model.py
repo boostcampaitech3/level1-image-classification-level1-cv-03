@@ -1,10 +1,6 @@
 import torch
 import torch.nn as nn
-<<<<<<< HEAD
 from torchvision.models import resnet18
-=======
-from torchvision.models import alexnet
->>>>>>> 01780aff723488d48daace92a4aeb5e3c7053bce
 from torchsummary import summary
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -66,26 +62,27 @@ class CNN(nn.Module):
     def forward(self,x):
         return self.net(x)
 
-<<<<<<< HEAD
 
 class MultiMaskModel(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.model = alexnet()
-=======
-alexnet_model = alexnet(pretrained=True)
->>>>>>> 01780aff723488d48daace92a4aeb5e3c7053bce
-    
+        model = resnet18().to(device)
+        self.conv_layers = nn.Sequential(*list(model.children())[:-1])
+        self.ismask = nn.Sequential(nn.Linear(512,3, bias=True),nn.ReLU())
+        self.gender = nn.Sequential(nn.Linear(512,2, bias=True),nn.ReLU())
+        self.age = nn.Sequential(nn.Linear(512,1, bias=True))
+
+    def forward(self, x):
+        x = self.conv_layers(x)
+        x = torch.flatten(x, start_dim=1)
+        ismask=self.ismask(x)
+        gender=self.gender(x)
+        age=self.age(x)
+        
+        return ismask, gender, age
+
 if __name__ == "__main__":
-    # C = CNN().to(device)
-    # summary(C,(3,512,384))
-<<<<<<< HEAD
-    resnet_model = resnet18().to(device)
-    summary(resnet_model,(3,440,290))
-    # print(list(alexnet_model.children())[:-1])
-=======
-    # alexnet_model = alexnet().to(device)
-    # summary(alexnet_model,(3,512,384))
-    print(list(alexnet_model.children())[:-1])
->>>>>>> 01780aff723488d48daace92a4aeb5e3c7053bce
+    model = resnet18().to(device)
+    print(*list(model.children())[:-1])
+    pass

@@ -1,11 +1,7 @@
 import torch
 from torchvision import transforms
 from torch.utils.data import Dataset
-<<<<<<< HEAD
 from PIL import Image
-=======
-
->>>>>>> 01780aff723488d48daace92a4aeb5e3c7053bce
 
 class MaskDataset(Dataset):
 
@@ -43,22 +39,23 @@ class TestDataset(Dataset):
 class MultiMaskDataset(Dataset):
 
     def __init__(self, image_list, ismask, gender, age, transform):
-        self.X = image_list
-        self.ismask=ismask,
-        self.gender=gender,
-        self.age=age,
+        self.image_list = image_list
+        self.ismask= ismask
+        self.gender= gender
+        self.age= age
         
         self.transform = transform
         
     def __len__(self):
-        return len(self.X)
+        return len(self.image_list)
         
     def __getitem__(self, index):
-        image = self.transform(self.X[index])
-        label = {
-            'ismask':self.ismask[index],
-            'gender':self.gender[index],
-            'age':self.age[index],
-        }
-        return image, label
+        
+        image=self.transform(self.image_list[index])
+        ismask=self.ismask[index]
+        gender=self.gender[index]
+        age=self.age[index]
+        
+        return image,ismask,gender,age
+
 
