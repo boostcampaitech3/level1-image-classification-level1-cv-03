@@ -18,8 +18,13 @@
 4. Multi sample dropout : 이것도 3번과 같은 구조 같습니다.
     - https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification/discussion/100961 `경륜`
 
-## Augmentation, transform
+## Train Dataset
+1. 마스크에는 큰 상관이 없지만, 나이와 성별에는 Augmentation이 overfit을 유발하는 것 같음. 똑같은 사람에 대해서 이미 7장이 있는 상황이기 때문에 이미 Augment된 상태라고 봐도 무방하지 않나? `경륜`
+2. 모델이 예측을 잘 못하는 50대 후반과 60대 초반 구간의 데이터를 아예 삭제해보는 것은 어떨까
 
+## Augmentation, transform
+1. 밝기와 채도에 영향이 큰 것 같음. 다른 인물이어도 같은 배경에서 찍힌 케이스들이 꽤 있기 때문
+2. 기존 데이터셋에 Albumentation을 적용해서 클래스간에 불균형을 맞춘 상태에서 학습을 할 예정 `경륜`
 
 ## Imbalanced, Loss
 1. Label Smoothing

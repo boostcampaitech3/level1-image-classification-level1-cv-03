@@ -16,3 +16,6 @@
 
 ### Evaluation
 - `SM_GROUND_TRUTH_DIR=[GT dir] SM_OUTPUT_DATA_DIR=[inference output dir] python evaluation.py`
+
+### RAW DATA
+- `change_error_data.py, ready_to_data.py, test_data.py 순으로 읽으시면 됩니다.`

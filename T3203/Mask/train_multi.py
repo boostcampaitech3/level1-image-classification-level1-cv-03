@@ -10,7 +10,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from tqdm import tqdm
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -18,22 +17,22 @@ images_path = '/opt/ml/backup/input/data/train/images'
 sampling_size_rate = 0.2
 
 S = Sampling(images_path,sampling_size_rate)
-test_image_list,_,_,_,test_mixed_class = refine_data(images_path,S.test_image_directory_names)
-train_image_list,_,_,_,train_mixed_class = refine_data(images_path,S.train_image_directory_names)
+test_image_list,test_mask_class,test_gender_class,test_age_class,_ = refine_data(images_path,S.test_image_directory_names)
+train_image_list,train_mask_class,train_gender_class,train_age_class,_ = refine_data(images_path,S.train_image_directory_names)
 
 trans = ImageTransform()
 resnet = resnet18().to(device)
-save_folder = "./runs/"
-save_path = os.path.join(save_folder, "resnet_centercrop_epochs20.pth")   # ./runs/best.pth
-resnet.load_state_dict(torch.load(save_path))
-print(f"{save_path} 에서 성공적으로 모델을 load 하였습니다.")
+# save_folder = "./runs/"
+# save_path = os.path.join(save_folder, "resnet_base_epochs20.pth")   # ./runs/best.pth
+# resnet.load_state_dict(torch.load(save_path))
+# print(f"{save_path} 에서 성공적으로 모델을 load 하였습니다.")
 loss = nn.CrossEntropyLoss()
 optm = optim.Adam(resnet.parameters(),lr=1e-3)
 
 train_dataset = MaskDataset(train_image_list,train_mixed_class,trans)
 test_dataset = MaskDataset(test_image_list,test_mixed_class,trans)
 
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 train_iter = DataLoader(train_dataset,batch_size=BATCH_SIZE,shuffle=True)
 test_iter = DataLoader(test_dataset,batch_size=BATCH_SIZE,shuffle=True)
 
@@ -55,7 +54,7 @@ def func_eval(model,data_iter,device):
 
 resnet.train() # to train mode 
 EPOCHS,print_every = 20,1
-for epoch in tqdm(range(EPOCHS)):
+for epoch in range(EPOCHS):
     loss_val_sum = 0
     for batch_in,batch_out in train_iter:
         # Forward path
@@ -79,7 +78,7 @@ for epoch in tqdm(range(EPOCHS)):
 
 
 save_folder = "./runs/"
-save_path = os.path.join(save_folder, "resnet_centercrop_epochs40.pth")   # ./runs/best.pth
+save_path = os.path.join(save_folder, "resnet_base_epochs20.pth")   # ./runs/best.pth
 os.makedirs(save_folder, exist_ok=True)  
 
 torch.save(resnet.state_dict(), save_path)

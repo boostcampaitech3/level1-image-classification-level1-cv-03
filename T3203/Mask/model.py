@@ -1,11 +1,15 @@
 import torch
 import torch.nn as nn
+from torchvision.models import resnet18
 from torchsummary import summary
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+# V100서버 터뜨린 모델
 class CNN(nn.Module):
     def __init__(self,
                  name='Convolutional Neural Network',
-                 xdim=[3,128,96],
+                 xdim=[3,512,384],
                  kernel_size=3,
                  cdims=[36,72],
                  hdims=[1024,128],
@@ -57,8 +61,17 @@ class CNN(nn.Module):
 
     def forward(self,x):
         return self.net(x)
+
+
+class MultiMaskModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.model = alexnet()
     
 if __name__ == "__main__":
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    C = CNN().to(device)
-    summary(C,(3,128,96))
+    # C = CNN().to(device)
+    # summary(C,(3,512,384))
+    resnet_model = resnet18().to(device)
+    summary(resnet_model,(3,440,290))
+    # print(list(alexnet_model.children())[:-1])
