@@ -1,6 +1,8 @@
-import torch
+from json.tool import main
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
+import torch
 
 
 class BaseModel(nn.Module):
@@ -35,19 +37,83 @@ class BaseModel(nn.Module):
 
 
 # Custom Model Template
-class MyModel(nn.Module):
+class Res50(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
-
-        """
-        1. 위와 같이 생성자의 parameter 에 num_claases 를 포함해주세요.
-        2. 나만의 모델 아키텍쳐를 디자인 해봅니다.
-        3. 모델의 output_dimension 은 num_classes 로 설정해주세요.
-        """
+        self.pretrain_model = torchvision.models.resnext50_32x4d(pretrained=True)
+        self.pretrain_model.fc = torch.nn.Linear(in_features=2048, out_features=num_classes, bias=True) # resnet18.fc의 in_features의 크기는?
 
     def forward(self, x):
-        """
-        1. 위에서 정의한 모델 아키텍쳐를 forward propagation 을 진행해주세요
-        2. 결과로 나온 output 을 return 해주세요
-        """
+        x = self.pretrain_model.forward(x)
         return x
+
+# Custom Model Template
+class Res18(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.pretrain_model = torchvision.models.resnet18(pretrained=True)
+        self.pretrain_model.fc = torch.nn.Linear(in_features=512, out_features=num_classes, bias=True) # resnet18.fc의 in_features의 크기는?
+
+    def forward(self, x):
+        x = self.pretrain_model.forward(x)
+        return x
+
+# Custom Model Template
+class Res183Ways(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.res18 = Res18(num_classes)
+        self.res18.load_state_dict(torch.load("./model/res18/best.pth"))
+        self.res18 = nn.Sequential(*list(self.res18.pretrain_model.children())[:-1])
+
+        self.mask = nn.Linear(512, 3, bias=True)
+        self.age = nn.Linear(512, 3, bias=True)
+        self.gender = nn.Linear(512, 3, bias=True)
+
+        def dfs_freeze(model):
+            for name, child in model.named_children():
+                for param in child.parameters():
+                    #print(param)
+                    param.requires_grad = False
+                    #print(param)
+                dfs_freeze(child)
+        dfs_freeze(self.res18)
+    
+
+    def forward(self, x):
+        x = self.res18.forward(x)
+        x = torch.flatten(x, start_dim=1)
+        m = self.mask(x)
+        a = self.age(x)
+        s = self.gender(x)
+        return {"mask":m, "age":a, "gender":s}
+
+# Custom Model Template
+class Res503Ways(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.res50 = Res50(num_classes)
+        self.res50.load_state_dict(torch.load("./model/res50/best.pth"))
+        self.res50 = nn.Sequential(*list(self.res50.pretrain_model.children())[:-1])
+
+        self.mask = nn.Linear(2048, 3, bias=True)
+        self.age = nn.Linear(2048, 3, bias=True)
+        self.gender = nn.Linear(2048, 3, bias=True)
+
+        def dfs_freeze(model):
+            for name, child in model.named_children():
+                for param in child.parameters():
+                    #print(param)
+                    param.requires_grad = False
+                    #print(param)
+                dfs_freeze(child)
+        dfs_freeze(self.res50)
+    
+
+    def forward(self, x):
+        x = self.res50.forward(x)
+        x = torch.flatten(x, start_dim=1)
+        m = self.mask(x)
+        a = self.age(x)
+        s = self.gender(x)
+        return {"mask":m, "age":a, "gender":s}
