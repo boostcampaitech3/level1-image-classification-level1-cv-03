@@ -312,3 +312,27 @@ class TestDataset(Dataset):
 
     def __len__(self):
         return len(self.img_paths)
+
+class _3WaysDataset(MaskSplitByProfileDataset):
+    def __init__(self,data_dir):
+        super().__init__(data_dir,  mean=(0.5, 0.5, 0.45), std=(0.2, 0.2, 0.2), val_ratio=0.2)
+
+    def __getitem__(self, index):
+        assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
+
+        image = self.read_image(index)
+        mask_label = self.get_mask_label(index)
+        gender_label = self.get_gender_label(index)
+        age_label = self.get_age_label(index)
+        multi_class_label = self.encode_multi_class(mask_label, gender_label, age_label)
+        
+        image_transform = self.transform(image)
+        
+        dict_label = {
+            'class' : multi_class_label,
+            'mask' : mask_label,
+            'gender' : gender_label,
+            'age' : age_label
+        }
+
+        return image_transform, dict_label
