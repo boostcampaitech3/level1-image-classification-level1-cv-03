@@ -47,21 +47,12 @@ class EfficientNetB7Model(nn.Module):
         """
         self.model = EfficientNet.from_pretrained('efficientnet-b0', num_classes=num_classes)
 
-        print(self.model)
         # 미리 학습된 weight들은 고정하고 뒷부분 2단계만 학습
         # fc 제외하고 freeze
         # for n, p in self.model.named_parameters():
         #     if '_fc' not in n:
         #         p.requires_grad = False
         # self.model = torch.nn.parallel.DistributedDataParallel(self.model)
-
-        # self.dropout = nn.Dropout(0.75)
-        # self.relu = nn.ReLU()
-        # self.l1 = nn.Linear(64 , 2560)
-        # self.model._fc = nn.Sequential(
-        #     nn.Dropout(0.75),
-        #     nn.Linear(in_features=self.model._fc.in_features, out_features=num_classes)
-        # )
         
         self.mask = nn.Linear(1280, 3, bias=True)
         self.gender = nn.Linear(1280, 2, bias=True)
@@ -73,12 +64,6 @@ class EfficientNetB7Model(nn.Module):
         1. 위에서 정의한 모델 아키텍쳐를 forward propagation 을 진행해주세요
         2. 결과로 나온 output 을 return 해주세요
         """
-        # x = self.model(x)
-        # print('21: ', x.shape)
-
-        # x = torch.flatten(x, start_dim=1)
-        # print('22: ', x.shape)
-
         x = self.model.extract_features(x)
         x = F.avg_pool2d(x, x.size()[2:]).reshape(-1, 1280)
 
@@ -87,3 +72,12 @@ class EfficientNetB7Model(nn.Module):
             'gender': self.gender(x),
             'age': self.age(x)
         }
+
+
+    # def get_loss(self, net_output, ground_truth):
+    #     mask_loss = F.cross_entropy(net_output['mask'], ground_truth['mask'])
+    #     gender_loss = F.cross_entropy(net_output['gender'], ground_truth['gender'])
+    #     age_loss = F.cross_entropy(net_output['age'], ground_truth['age'])
+
+    #     loss = mask_loss + gender_loss + age_loss
+    #     return loss

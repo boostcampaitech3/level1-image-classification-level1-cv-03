@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset, Subset, random_split
-from torchvision.transforms import Resize, ToTensor, Normalize, Compose, CenterCrop, ColorJitter
+from torchvision.transforms import Resize, ToTensor, Normalize, Compose, CenterCrop, ColorJitter, RandomResizedCrop, RandomRotation, RandomHorizontalFlip
 
 IMG_EXTENSIONS = [
     ".jpg", ".JPG", ".jpeg", ".JPEG", ".png",
@@ -58,6 +58,22 @@ class CustomAugmentation:
             ToTensor(),
             Normalize(mean=mean, std=std),
             AddGaussianNoise()
+        ])
+
+    def __call__(self, image):
+        return self.transform(image)
+
+
+class TransferAugmentation:
+    def __init__(self, resize, mean, std, **args):
+        self.transform = Compose([
+            Resize(resize),
+            RandomResizedCrop(size=315, scale=(0.95, 1.0)),
+            RandomRotation(degrees=10),
+            RandomHorizontalFlip(),
+            CenterCrop(size=299),  # Image net standards
+            ToTensor(),
+            Normalize(mean,std)
         ])
 
     def __call__(self, image):

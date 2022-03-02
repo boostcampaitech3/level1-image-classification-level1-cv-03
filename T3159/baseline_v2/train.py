@@ -82,15 +82,21 @@ def increment_path(path, exist_ok=False):
         return f"{path}{n}"
 
 
-def get_labels(labels):
-    age = (labels % 6) % 3
-    gender = (labels - age) % 6
-    mask = (labels - gender - age) // 6
-    return {
-        'mask': mask,
-        'gender': gender,
-        'age': age
-    }
+# 랜덤 위치에서 패치 만들지 않고, 가로 세로로 절반만 자르는 함수
+def half_bbox(size, lam):
+    W = size[2]
+    H = size[3]
+
+    # 가로로 절반(왼쪽, 오른쪽), 세로로 절반(위쪽, 아랫쪽)
+    idx = random.randint(0,1)
+
+    bbx1 = [0, 0]
+    bby1 = [0, H//2]
+    
+    bbx2 = [W, W]
+    bby2 = [H//2, H]
+
+    return bbx1[idx], bby1[idx], bbx2[idx], bby2[idx]
 
 
 def train(data_dir, model_dir, args):
@@ -124,7 +130,7 @@ def train(data_dir, model_dir, args):
     train_loader = DataLoader(
         train_set,
         batch_size=args.batch_size,
-        num_workers=multiprocessing.cpu_count() // 2,
+        num_workers=0,#multiprocessing.cpu_count() // 2,
         shuffle=True,
         pin_memory=use_cuda,
         drop_last=True,
@@ -133,7 +139,7 @@ def train(data_dir, model_dir, args):
     val_loader = DataLoader(
         val_set,
         batch_size=args.valid_batch_size,
-        num_workers=multiprocessing.cpu_count() // 2,
+        num_workers=0,#multiprocessing.cpu_count() // 2,
         shuffle=False,
         pin_memory=use_cuda,
         drop_last=True,
@@ -161,6 +167,7 @@ def train(data_dir, model_dir, args):
     with open(os.path.join(save_dir, 'config.json'), 'w', encoding='utf-8') as f:
         json.dump(vars(args), f, ensure_ascii=False, indent=4)
 
+    loss, loss_item = None, None
     best_val_acc = 0
     best_val_loss = np.inf
     for epoch in range(args.epochs):
@@ -175,21 +182,61 @@ def train(data_dir, model_dir, args):
 
             optimizer.zero_grad()
 
-            outs = model(inputs)
-            preds, loss = None, None
+            # outs = model(inputs)
+            preds = None
             if args.model == 'EfficientNetB7Model':
-                temp_labels = get_labels(labels)
-                loss_mask = criterion(outs['mask'], temp_labels['mask'])
-                loss_gender = criterion(outs['gender'], temp_labels['gender'])
-                loss_age = criterion(outs['age'], temp_labels['age'])
-                loss = loss_mask + loss_gender + loss_age
-                print("efi out : ", type(outs['mask']), outs['mask'].shape)
-                pred_mask = torch.argmax(outs['mask'], dim=-1).cpu()
-                pred_gender = torch.argmax(outs['gender'], dim=-1).cpu()
-                pred_age = torch.argmax(outs['age'], dim=-1).cpu()
-                preds = (pred_mask * 6) + (pred_gender * 3) + (pred_age)
+                ### cutmix
+                r = np.random.rand(1)
+                if r <= 0.5:
+                    lam = 1/2
+                    rand_index = torch.randperm(inputs.size()[0])
+                    decoded_labels = MaskBaseDataset.decode_multi_class(labels)
+                    target_a = decoded_labels
+
+                    # mask, gender, age 별로 labels[rand_index] 만들고 다시 합쳐서 get_loss에 넣어준다?
+                    # target_b = labels[rand_index]
+                    target_mask = decoded_labels[0][rand_index]
+                    target_gender = decoded_labels[1][rand_index]
+                    target_age = decoded_labels[2][rand_index]
+
+                    target_b = (target_mask, target_gender, target_age)
+                    bbx1, bby1, bbx2, bby2 = half_bbox(inputs.size(), lam)
+                    inputs[:, :, bbx1:bbx2, bby1:bby2] = inputs[rand_index, :, bbx1:bbx2, bby1:bby2]
+
+
+                    output = model(inputs)
+
+                    pred_mask = torch.argmax(output['mask'], dim=-1)
+                    pred_gender = torch.argmax(output['gender'], dim=-1)
+                    pred_age = torch.argmax(output['age'], dim=-1)
+                    preds = (pred_mask * 6) + (pred_gender * 3) + (pred_age)
+
+                    loss_mask_a = criterion(output['mask'], target_a[0])
+                    loss_gender_a = criterion(output['gender'], target_a[1])
+                    loss_age_a = criterion(output['age'], target_a[2])
+                    loss_a = loss_mask_a + loss_gender_a + loss_age_a
+
+                    loss_mask_b = criterion(output['mask'], target_b[0])
+                    loss_gender_b = criterion(output['gender'], target_b[1])
+                    loss_age_b = criterion(output['age'], target_b[2])                    
+                    loss_b = loss_mask_b + loss_gender_b + loss_age_b
+                    loss = loss_a * lam + loss_b * (1. - lam)
+                else:
+                    # loss = model.module.get_loss(outs, temp_labels)
+                    # multi model
+                    outs = model(inputs)
+                    decoded_labels = MaskBaseDataset.decode_multi_class(labels)
+                    loss_mask = criterion(outs['mask'], decoded_labels[0])
+                    loss_gender = criterion(outs['gender'], decoded_labels[1])
+                    loss_age = criterion(outs['age'], decoded_labels[2])
+                    loss = loss_mask + loss_gender + loss_age
+                    pred_mask = torch.argmax(outs['mask'], dim=-1)
+                    pred_gender = torch.argmax(outs['gender'], dim=-1)
+                    pred_age = torch.argmax(outs['age'], dim=-1)
+                    preds = (pred_mask * 6) + (pred_gender * 3) + (pred_age)
             else:
-                print("base out : ", type(outs), outs.shape)
+                # original code
+                outs = model(inputs)
                 preds = torch.argmax(outs, dim=-1)
                 loss = criterion(outs, labels)
 
@@ -226,19 +273,59 @@ def train(data_dir, model_dir, args):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
-                outs = model(inputs)
-                preds, loss_item = None, None
+                # outs = model(inputs)
+                preds = None
                 if args.model == 'EfficientNetB7Model':
-                    temp_labels = get_labels(labels)
-                    loss_mask = criterion(outs['mask'], temp_labels['mask'])
-                    loss_gender = criterion(outs['gender'], temp_labels['gender'])
-                    loss_age = criterion(outs['age'], temp_labels['age'])
-                    loss_item = (loss_mask + loss_gender + loss_age).item()
-                    pred_mask = torch.argmax(outs['mask'], dim=-1)
-                    pred_gender = torch.argmax(outs['gender'], dim=-1)
-                    pred_age = torch.argmax(outs['age'], dim=-1)
-                    preds = (pred_mask * 6) + (pred_gender * 3) + (pred_age)
+                    ### cutmix
+                    r = np.random.rand(1)
+                    if r <= 0.5:
+                        lam = 1/2
+                        rand_index = torch.randperm(inputs.size()[0])
+                        decoded_labels = MaskBaseDataset.decode_multi_class(labels)
+                        target_a = decoded_labels
+
+                        # mask, gender, age 별로 labels[rand_index] 만들고 다시 합쳐서 get_loss에 넣어준다?
+                        # target_b = labels[rand_index]
+                        target_mask = decoded_labels[0][rand_index]
+                        target_gender = decoded_labels[1][rand_index]
+                        target_age = decoded_labels[2][rand_index]
+
+                        target_b = (target_mask, target_gender, target_age)
+                        bbx1, bby1, bbx2, bby2 = half_bbox(inputs.size(), lam)
+                        inputs[:, :, bbx1:bbx2, bby1:bby2] = inputs[rand_index, :, bbx1:bbx2, bby1:bby2]
+
+                        output = model(inputs)
+
+                        pred_mask = torch.argmax(output['mask'], dim=-1)
+                        pred_gender = torch.argmax(output['gender'], dim=-1)
+                        pred_age = torch.argmax(output['age'], dim=-1)
+                        preds = (pred_mask * 6) + (pred_gender * 3) + (pred_age)
+
+                        loss_mask_a = criterion(output['mask'], target_a[0])
+                        loss_gender_a = criterion(output['gender'], target_a[1])
+                        loss_age_a = criterion(output['age'], target_a[2])
+                        loss_a = loss_mask_a + loss_gender_a + loss_age_a
+
+                        loss_mask_b = criterion(output['mask'], target_b[0])
+                        loss_gender_b = criterion(output['gender'], target_b[1])
+                        loss_age_b = criterion(output['age'], target_b[2])                    
+                        loss_b = loss_mask_b + loss_gender_b + loss_age_b
+                        loss_item = (loss_a * lam + loss_b * (1. - lam)).item()                        
+                    else:
+                        # multi model
+                        outs = model(inputs)
+                        decoded_labels = MaskBaseDataset.decode_multi_class(labels)
+                        loss_mask = criterion(outs['mask'], decoded_labels[0])
+                        loss_gender = criterion(outs['gender'], decoded_labels[1])
+                        loss_age = criterion(outs['age'], decoded_labels[2])
+                        loss_item = (loss_mask + loss_gender + loss_age).item()
+                        pred_mask = torch.argmax(outs['mask'], dim=-1)
+                        pred_gender = torch.argmax(outs['gender'], dim=-1)
+                        pred_age = torch.argmax(outs['age'], dim=-1)
+                        preds = (pred_mask * 6) + (pred_gender * 3) + (pred_age)
                 else:
+                    # original code
+                    outs = model(inputs)
                     preds = torch.argmax(outs, dim=-1)
                     loss_item = criterion(outs, labels).item()
 

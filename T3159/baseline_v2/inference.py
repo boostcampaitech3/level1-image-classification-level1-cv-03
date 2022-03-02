@@ -60,9 +60,16 @@ def inference(data_dir, model_dir, output_dir, args):
     with torch.no_grad():
         for idx, images in enumerate(loader):
             images = images.to(device)
-            pred = model(images)
-            pred = pred.argmax(dim=-1)
-            preds.extend(pred.cpu().numpy())
+            outs = model(images)
+            if args.model == 'EfficientNetB7Model':
+                pred_mask = torch.argmax(outs['mask'], dim=-1)
+                pred_gender = torch.argmax(outs['gender'], dim=-1)
+                pred_age = torch.argmax(outs['age'], dim=-1)
+                pred = (pred_mask * 6) + (pred_gender * 3) + (pred_age)
+                preds.extend(pred.cpu().numpy())
+            else:
+                pred = outs.argmax(dim=-1)
+                preds.extend(pred.cpu().numpy())
 
     info['ans'] = preds
     save_path = os.path.join(output_dir, f'output.csv')
