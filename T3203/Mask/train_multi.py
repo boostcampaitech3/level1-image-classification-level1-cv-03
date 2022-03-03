@@ -35,12 +35,12 @@ test_iter = DataLoader(test_dataset,batch_size=BATCH_SIZE,shuffle=True)
 model = MultiMaskModel().to(device)
 loss = nn.CrossEntropyLoss()
 loss_l1 = nn.L1Loss()
-optm = optim.Adam(model.parameters(),lr=3e-4)
+optm = optim.Adam(model.parameters(),lr=1e-3)
 
-save_folder = "/opt/ml/workspace/T3203/runs/"
-save_path = os.path.join(save_folder, "resnet_centercrop_grayscale_multilayer_epochs20.pth")   # ./runs/best.pth
-model.load_state_dict(torch.load(save_path))
-print(f"{save_path} 에서 성공적으로 모델을 load 하였습니다.")
+# save_folder = "/opt/ml/workspace/T3203/runs/"
+# save_path = os.path.join(save_folder, "resnet_centercrop_grayscale_multilayer_epochs10.pth")   # ./runs/best.pth
+# model.load_state_dict(torch.load(save_path))
+# print(f"{save_path} 에서 성공적으로 모델을 load 하였습니다.")
 
 
 def check_age_class(x):
@@ -126,7 +126,7 @@ for epoch in tqdm(range(EPOCHS)):
 
 
 save_folder = "/opt/ml/workspace/T3203/runs/"
-save_path = os.path.join(save_folder, "resnet_centercrop_grayscale_multilayer_epochs20.pth")   # ./runs/best.pth
+save_path = os.path.join(save_folder, "resnet_centercrop_multilayer_epochs20.pth")   # ./runs/best.pth
 os.makedirs(save_folder, exist_ok=True)  
 
 torch.save(model.state_dict(), save_path)

@@ -69,8 +69,8 @@ class MultiMaskModel(nn.Module):
 
         model = resnet18().to(device)
         self.conv_layers = nn.Sequential(*list(model.children())[:-1])
-        self.ismask = nn.Sequential(nn.Linear(512,3, bias=True),nn.ReLU())
-        self.gender = nn.Sequential(nn.Linear(512,2, bias=True),nn.ReLU())
+        self.ismask = nn.Sequential(nn.Linear(512,3, bias=True))
+        self.gender = nn.Sequential(nn.Linear(512,2, bias=True))
         self.age = nn.Sequential(nn.Linear(512,1, bias=True))
 
     def forward(self, x):
