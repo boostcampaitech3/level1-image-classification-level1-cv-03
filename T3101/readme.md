@@ -14,5 +14,6 @@
 
 
 ### 수정 사항
-- 2/27(일) : Model 관련 파일에 전부 cutmix 추가
-- 2/28(월) : MultiModel과 Model(single model) 수정해서 업로드
+- Model 관련 파일에 전부 cutmix 추가
+- MultiModel과 Model(single model) 수정해서 업로드
+- ResNet18 이외에 다른 pretrained model를 사용함
